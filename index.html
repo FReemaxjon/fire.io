@@ -33,32 +33,43 @@
   <script type="module">
     import * as THREE from 'three';
     import { MindARThree } from 'mindar-image-three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { Fireworks } from './fireworks.js';
 
     const start = async () => {
-      console.log("📸 Initializing AR environment...");
+      console.log("📸 Initializing AR...");
 
       const mindarThree = new MindARThree({
         container: document.querySelector("#ar-container"),
-        imageTargetSrc: "./assets/target.mind" // Make sure this file exists
+        imageTargetSrc: "./assets/target.mind"
       });
 
       const { renderer, scene, camera } = mindarThree;
-
       const anchor = mindarThree.addAnchor(0);
 
-      const loader = new GLTFLoader();
-      loader.load("./assets/fireworks-animated.glb", (gltf) => {
-    const fireworks = gltf.scene;
-    fireworks.scale.set(0.5, 0.5, 0.5);
-    anchor.group.add(fireworks);
-      }, undefined, (error) => {
-        console.error("❌ Error loading fireworks model:", error);
-      });
+      let fireworks = null;
+
+      anchor.onTargetFound = () => {
+        console.log("🎯 Target found!");
+        if (!fireworks) {
+          fireworks = new Fireworks(scene, anchor.group);
+        }
+      };
+
+      anchor.onTargetLost = () => {
+        console.log("❌ Target lost.");
+      };
 
       await mindarThree.start();
       console.log("✅ AR Started");
+
+      let lastTime = performance.now();
       renderer.setAnimationLoop(() => {
+        const currentTime = performance.now();
+        const delta = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        if (fireworks) fireworks.update(delta);
+
         renderer.render(scene, camera);
       });
     };
