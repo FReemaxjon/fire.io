@@ -44,8 +44,16 @@
       });
 
       const { renderer, scene, camera } = mindarThree;
-      const anchor = mindarThree.addAnchor(0);
 
+      // ✅ Important fix for Three.js >= 0.152
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      // Optional: black background to see fireworks better
+      scene.background = new THREE.Color(0x000000);
+
+      const anchor = mindarThree.addAnchor(0);
       let fireworks = null;
 
       anchor.onTargetFound = () => {
@@ -63,6 +71,7 @@
       console.log("✅ AR Started");
 
       let lastTime = performance.now();
+
       renderer.setAnimationLoop(() => {
         const currentTime = performance.now();
         const delta = (currentTime - lastTime) / 1000;
