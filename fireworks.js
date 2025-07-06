@@ -61,7 +61,7 @@ export class Fireworks {
       positions[i3 + 1] += this.velocities[i][1];
       positions[i3 + 2] += this.velocities[i][2];
     }
-scene.background = new THREE.Color(0x000000);
+
     this.geometry.attributes.position.needsUpdate = true;
   }
 }
