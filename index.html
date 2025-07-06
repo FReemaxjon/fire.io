@@ -48,11 +48,10 @@
       const anchor = mindarThree.addAnchor(0);
 
       const loader = new GLTFLoader();
-      loader.load("./assets/fireworks.glb", (gltf) => {
-        console.log("🎆 Fireworks model loaded.");
-        const fireworks = gltf.scene;
-        fireworks.scale.set(0.5, 0.5, 0.5);
-        anchor.group.add(fireworks);
+      loader.load("./assets/fireworks-animated.glb", (gltf) => {
+    const fireworks = gltf.scene;
+    fireworks.scale.set(0.5, 0.5, 0.5);
+    anchor.group.add(fireworks);
       }, undefined, (error) => {
         console.error("❌ Error loading fireworks model:", error);
       });
