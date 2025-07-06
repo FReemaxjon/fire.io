@@ -31,59 +31,58 @@
   <div id="ar-container"></div>
 
   <script type="module">
-    import * as THREE from 'three';
-    import { MindARThree } from 'mindar-image-three';
-    import { Fireworks } from './fireworks.js';
+   import * as THREE from 'three';
+import { MindARThree } from 'mindar-image-three';
+import { Fireworks } from './fireworks.js';
 
-    const start = async () => {
-      console.log("📸 Initializing AR...");
+const start = async () => {
+  try {
+    const mindarThree = new MindARThree({
+      container: document.querySelector("#ar-container"),
+      imageTargetSrc: "./assets/target.mind"
+    });
 
-      const mindarThree = new MindARThree({
-        container: document.querySelector("#ar-container"),
-        imageTargetSrc: "./assets/target.mind"
-      });
+    const { renderer, scene, camera } = mindarThree;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
 
-      const { renderer, scene, camera } = mindarThree;
+    scene.background = new THREE.Color(0x000000);
 
-      // ✅ Important fix for Three.js >= 0.152
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
+    const anchor = mindarThree.addAnchor(0);
+    let fireworks = null;
 
-      // Optional: black background to see fireworks better
-     // scene.background = new THREE.Color(0x000000);
-
-      const anchor = mindarThree.addAnchor(0);
-      let fireworks = null;
-
-      anchor.onTargetFound = () => {
-        console.log("🎯 Target found!");
-        if (!fireworks) {
-          fireworks = new Fireworks(scene, anchor.group);
-        }
-      };
-
-      anchor.onTargetLost = () => {
-        console.log("❌ Target lost.");
-      };
-
-      await mindarThree.start();
-      console.log("✅ AR Started");
-
-      let lastTime = performance.now();
-
-      renderer.setAnimationLoop(() => {
-        const currentTime = performance.now();
-        const delta = (currentTime - lastTime) / 1000;
-        lastTime = currentTime;
-
-        if (fireworks) fireworks.update(delta);
-
-        renderer.render(scene, camera);
-      });
+    anchor.onTargetFound = () => {
+      console.log("🎯 Target found!");
+      if (!fireworks) {
+        fireworks = new Fireworks(scene, anchor.group);
+      }
     };
 
-    start();
+    anchor.onTargetLost = () => {
+      console.log("❌ Target lost.");
+    };
+
+    await mindarThree.start();
+    console.log("✅ AR Started");
+
+    let lastTime = performance.now();
+    renderer.setAnimationLoop(() => {
+      const currentTime = performance.now();
+      const delta = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      if (fireworks) fireworks.update(delta);
+
+      renderer.render(scene, camera);
+    });
+  } catch (e) {
+    console.error("💥 Failed to initialize MindARThree:", e);
+  }
+};
+
+start();
+
   </script>
 </body>
 </html>
