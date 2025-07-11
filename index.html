@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebAR Flower Pop</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      #ar-container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+    </style>
+    <!-- MindAR and Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+  </head>
+  <body>
+    <div id="ar-container"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+          container: document.querySelector("#ar-container"),
+          imageTargetSrc: "./assets/target.mind", // Replace with your actual .mind file path
+        });
+
+        const { renderer, scene, camera } = mindarThree;
+        const anchor = mindarThree.addAnchor(0); // Target index
+
+        const flowerGroup = new THREE.Group();
+        anchor.group.add(flowerGroup);
+
+        // Simple flower-like shape using spheres
+        const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const material = new THREE.MeshStandardMaterial({ color: "pink" });
+
+        const flowerCount = 6;
+        for (let i = 0; i < flowerCount; i++) {
+          const flower = new THREE.Mesh(geometry, material);
+          flower.position.set(
+            (Math.random() - 0.5) * 1.2,
+            (Math.random() - 0.5) * 1.2,
+            (Math.random() - 0.5) * 1.2
+          );
+          flower.scale.set(0, 0, 0); // Start hidden
+          flowerGroup.add(flower);
+        }
+
+        // Lighting
+        const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+        scene.add(light);
+
+        let time = 0;
+        renderer.setAnimationLoop(() => {
+          time += 0.03;
+          flowerGroup.children.forEach((flower, i) => {
+            const scale = Math.abs(Math.sin(time + i)) * 1;
+            flower.scale.set(scale, scale, scale);
+          });
+          renderer.render(scene, camera);
+        });
+
+        await mindarThree.start();
+      });
+    </script>
+  </body>
+</html>
