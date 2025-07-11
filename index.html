@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>MindAR Dandelion ES Module</title>
+  <title>MindAR Dandelion FX</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -32,11 +32,13 @@
       const { renderer, scene, camera } = mindarThree;
       const anchor = mindarThree.addAnchor(0);
 
-      // Hemisphere light
-      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-      scene.add(light);
+      // Lights
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
+      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-      // Load dandelion sprite texture
+      const dandelionGroup = new THREE.Group();
+      anchor.group.add(dandelionGroup);
+
       const loader = new THREE.TextureLoader();
       loader.load("./assets/dandelion.png", (texture) => {
         const material = new THREE.SpriteMaterial({
@@ -46,20 +48,55 @@
           depthWrite: false
         });
 
-        const flower = new THREE.Sprite(material);
-        flower.scale.set(0.5, 0.5, 0.5);
-        flower.position.set(0, 0.2, 0);
+        const flowerCount = 8;
+        const flowers = [];
 
-        // Add to anchor (shows only when target is visible)
-        anchor.group.add(flower);
-        console.log("✅ Dandelion added to anchor");
+        for (let i = 0; i < flowerCount; i++) {
+          const sprite = new THREE.Sprite(material.clone());
+          sprite.position.set(
+            (Math.random() - 0.5) * 0.6,
+            (Math.random() - 0.5) * 0.6,
+            (Math.random() - 0.5) * 0.6
+          );
+          sprite.scale.set(0.4, 0.4, 0.4);
+          dandelionGroup.add(sprite);
+          flowers.push(sprite);
+        }
+
+        // Trail
+        const trailGeometry = new THREE.BufferGeometry();
+        const trailPositions = new Float32Array(flowerCount * 3);
+        trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+
+        const trailMaterial = new THREE.PointsMaterial({
+          color: 0xffffcc,
+          size: 0.03,
+          transparent: true,
+          opacity: 0.6
+        });
+
+        const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
+        dandelionGroup.add(trailPoints);
+
+        let time = 0;
+        renderer.setAnimationLoop(() => {
+          time += 0.02;
+          flowers.forEach((flower, i) => {
+            flower.material.rotation += 0.01;
+            flower.position.y += Math.sin(time + i) * 0.003;
+            trailPositions[i * 3 + 0] = flower.position.x;
+            trailPositions[i * 3 + 1] = flower.position.y;
+            trailPositions[i * 3 + 2] = flower.position.z;
+          });
+          trailGeometry.attributes.position.needsUpdate = true;
+          renderer.render(scene, camera);
+        });
+
+        console.log("✅ Multiple dandelions + trail ready");
       });
 
       await mindarThree.start();
       console.log("✅ MindAR started");
-      renderer.setAnimationLoop(() => {
-        renderer.render(scene, camera);
-      });
     });
   </script>
 </head>
