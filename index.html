@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Always Visible Dandelions WebAR</title>
+  <title>Dandelions Triggered by Marker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     html, body {
@@ -39,16 +39,15 @@
       const { renderer, scene, camera } = mindarThree;
       const anchor = mindarThree.addAnchor(0);
 
-      // Test red square to confirm rendering
+      // Red square test sprite
       const testSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
       testSprite.position.set(0, 0, -1);
       testSprite.scale.set(0.2, 0.2, 0.2);
       scene.add(testSprite);
 
-      // Dandelions always visible in front of camera
+      // Group to hold dandelion sprites
       const dandelionGroup = new THREE.Group();
-      dandelionGroup.visible = true;
-      dandelionGroup.position.set(0, 0, -1); // 1 meter forward
+      dandelionGroup.visible = false; // hidden until target is found
       scene.add(dandelionGroup);
 
       const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
@@ -80,7 +79,7 @@
               (Math.random() - 0.5) * 0.5,
               (Math.random() - 0.5) * 0.5
             );
-            flower.scale.set(0.3, 0.3, 0.3); // visible size
+            flower.scale.set(0.3, 0.3, 0.3);
             dandelionGroup.add(flower);
             flowers.push(flower);
           }
@@ -98,6 +97,21 @@
 
           const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
           dandelionGroup.add(trailPoints);
+
+          anchor.onTargetFound = () => {
+            console.log("✅ Marker found");
+            dandelionGroup.visible = true;
+
+            // Place dandelions in front of camera at moment of detection
+            const cameraDir = new THREE.Vector3();
+            camera.getWorldDirection(cameraDir);
+            const spawnPos = camera.position.clone().add(cameraDir.multiplyScalar(1));
+            dandelionGroup.position.copy(spawnPos);
+          };
+
+          anchor.onTargetLost = () => {
+            console.log("📭 Marker lost — but dandelions remain!");
+          };
 
           let time = 0;
           renderer.setAnimationLoop(() => {
