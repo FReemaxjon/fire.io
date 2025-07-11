@@ -64,18 +64,6 @@
           flowerGroup.add(flower);
           flowers.push(flower);
 
-          // Create glow using a duplicate with additive blending
-          const glowMaterial = new THREE.SpriteMaterial({ 
-            map: flowerTexture, 
-            color: 0xffffcc,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            opacity: 0.5,
-            depthWrite: false
-          });
-          const glow = new THREE.Sprite(glowMaterial);
-          glow.scale.set(1.5, 1.5, 1.5);
-          flower.add(glow);
         }
 
         // Store flower positions for trails
