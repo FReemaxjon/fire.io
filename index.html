@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Diagnostic Dandelions</title>
+  <title>Floating Dandelions (Detached + Tap)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -29,12 +30,17 @@
       });
 
       const { renderer, scene, camera } = mindarThree;
+      const anchor = mindarThree.addAnchor(0);
 
       scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
       scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
       const dandelionGroup = new THREE.Group();
+      dandelionGroup.visible = false;
       scene.add(dandelionGroup);
+
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
 
       const loader = new THREE.TextureLoader();
       loader.load("./assets/dandelion.png", (texture) => {
@@ -45,27 +51,81 @@
           depthWrite: false
         });
 
+        const flowerCount = 10;
         const flowers = [];
-        for (let i = 0; i < 8; i++) {
+
+        for (let i = 0; i < flowerCount; i++) {
           const sprite = new THREE.Sprite(material.clone());
-          sprite.scale.setScalar(0.3);
           sprite.position.set(
-            (Math.random() - 0.5),
-            (Math.random() - 0.5),
-            -1.2 + (Math.random() * 0.5)
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5
+          );
+          sprite.scale.setScalar(0.3 + Math.random() * 0.3);
+          sprite.userData.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.002,
+            (Math.random() - 0.5) * 0.002,
+            (Math.random() - 0.5) * 0.002
           );
           dandelionGroup.add(sprite);
           flowers.push(sprite);
         }
 
+        const trailGeometry = new THREE.BufferGeometry();
+        const trailPositions = new Float32Array(flowerCount * 3);
+        trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+
+        const trailMaterial = new THREE.PointsMaterial({
+          color: 0xffffcc,
+          size: 0.03,
+          transparent: true,
+          opacity: 0.6
+        });
+
+        const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
+        dandelionGroup.add(trailPoints);
+
+        window.addEventListener("click", (event) => {
+          const bounds = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+          pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+
+          raycaster.setFromCamera(pointer, camera);
+          const intersects = raycaster.intersectObjects(flowers);
+          if (intersects.length > 0) {
+            const flower = intersects[0].object;
+            flower.userData.velocity.y += 0.01;
+          }
+        });
+
+        // Animation
         renderer.setAnimationLoop(() => {
-          flowers.forEach(flower => {
+          flowers.forEach((flower, i) => {
             flower.material.rotation += 0.01;
+            flower.position.add(flower.userData.velocity);
+            trailPositions[i * 3 + 0] = flower.position.x;
+            trailPositions[i * 3 + 1] = flower.position.y;
+            trailPositions[i * 3 + 2] = flower.position.z;
+            flower.userData.velocity.multiplyScalar(0.98);
           });
+          trailGeometry.attributes.position.needsUpdate = true;
           renderer.render(scene, camera);
         });
 
-        console.log("✅ Diagnostic flowers loaded");
+        // Delayed world placement
+        let placed = false;
+        anchor.onTargetFound = () => {
+          if (!placed) {
+            setTimeout(() => {
+              const worldPos = new THREE.Vector3();
+              anchor.group.getWorldPosition(worldPos);
+              dandelionGroup.position.copy(worldPos);
+              dandelionGroup.visible = true;
+              placed = true;
+              console.log("✅ Flowers placed at:", worldPos);
+            }, 100); // wait 100ms for anchor to stabilize
+          }
+        };
       });
 
       await mindarThree.start();
