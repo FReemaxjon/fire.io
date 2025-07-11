@@ -1,127 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Free-Floating Dandelions WebAR</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-      #ar-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
-      }
-    </style>
-    <!-- MindAR and Three.js -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
-  </head>
-  <body>
-    <div id="ar-container"></div>
-    <script>
-     document.addEventListener("DOMContentLoaded", async () => {
-  const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-    container: document.querySelector("#ar-container"),
-    imageTargetSrc: "./assets/target.mind"
-  });
-
-  const { renderer, scene, camera } = mindarThree;
-  const anchor = mindarThree.addAnchor(0);
-
-  // DEBUG: Add test red sprite
-  const testSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
-  testSprite.position.set(0, 0, -1);
-  testSprite.scale.set(0.2, 0.2, 0.2);
-  scene.add(testSprite);
-
-  // Dandelions group
-  const dandelionGroup = new THREE.Group();
-  dandelionGroup.visible = false;
-  scene.add(dandelionGroup);
-
-  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-  scene.add(light);
-
-  const textureLoader = new THREE.TextureLoader();
-  textureLoader.load("./assets/dandelion.png", (flowerTexture) => {
-    const flowerMaterial = new THREE.SpriteMaterial({ 
-      map: flowerTexture, 
-      color: 0xffffff, 
-      transparent: true,
-      depthWrite: false,
-      opacity: 0.85 
-    });
-
-    const flowerCount = 6;
-    const flowers = [];
-
-    for (let i = 0; i < flowerCount; i++) {
-      const flower = new THREE.Sprite(flowerMaterial.clone());
-      flower.position.set(
-        (Math.random() - 0.5) * 1.5,
-        (Math.random() - 0.5) * 1.5,
-        (Math.random() - 0.5) * 1.5
-      );
-      flower.scale.set(0.2, 0.2, 0.2); // make visible
-      dandelionGroup.add(flower);
-      flowers.push(flower);
+<head>
+  <meta charset="UTF-8" />
+  <title>Debugged Free-Floating Dandelions WebAR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
-
-    const trailGeometry = new THREE.BufferGeometry();
-    const trailPositions = new Float32Array(flowerCount * 3);
-    trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-
-    const trailMaterial = new THREE.PointsMaterial({ 
-      color: 0xffff99, 
-      size: 0.05, 
-      transparent: true, 
-      opacity: 0.6 
-    });
-
-    const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
-    dandelionGroup.add(trailPoints);
-
-    anchor.onTargetFound = () => {
-      console.log("Marker found!");
-      dandelionGroup.visible = true;
-      const anchorPos = new THREE.Vector3();
-      anchor.group.getWorldPosition(anchorPos);
-      dandelionGroup.position.copy(anchorPos);
-    };
-
-    let time = 0;
-    renderer.setAnimationLoop(() => {
-      time += 0.02;
-
-      flowers.forEach((flower, i) => {
-        const scale = Math.abs(Math.sin(time + i)) * 0.5 + 0.1;
-        flower.scale.set(scale, scale, scale);
-        flower.material.rotation += 0.01;
-        flower.position.y += Math.sin(time + i) * 0.005;
-
-        trailPositions[i * 3 + 0] = flower.position.x;
-        trailPositions[i * 3 + 1] = flower.position.y;
-        trailPositions[i * 3 + 2] = flower.position.z;
+    #ar-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+</head>
+<body>
+  <div id="ar-container"></div>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+        container: document.querySelector("#ar-container"),
+        imageTargetSrc: "./assets/target.mind"
       });
 
-      trailGeometry.attributes.position.needsUpdate = true;
-      renderer.render(scene, camera);
-    });
-  });
+      const { renderer, scene, camera } = mindarThree;
+      const anchor = mindarThree.addAnchor(0);
 
-  await mindarThree.start();
-});
-    </script>
-  </body>
+      // Debug red square to confirm rendering
+      const testSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
+      testSprite.position.set(0, 0, -1);
+      testSprite.scale.set(0.2, 0.2, 0.2);
+      scene.add(testSprite);
+
+      const dandelionGroup = new THREE.Group();
+      dandelionGroup.visible = false;
+      scene.add(dandelionGroup);
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+      scene.add(light);
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(
+        "./assets/dandelion.png",
+        (flowerTexture) => {
+          console.log("✅ Dandelion texture loaded:", flowerTexture);
+
+          const flowerMaterial = new THREE.SpriteMaterial({ 
+            map: flowerTexture, 
+            color: 0xffffff, 
+            transparent: true,
+            depthWrite: false,
+            opacity: 1.0
+          });
+
+          const flowerCount = 6;
+          const flowers = [];
+
+          for (let i = 0; i < flowerCount; i++) {
+            const flower = new THREE.Sprite(flowerMaterial.clone());
+            flower.position.set(
+              (Math.random() - 0.5) * 1,
+              (Math.random() - 0.5) * 1,
+              (Math.random() - 0.5) * 1
+            );
+            flower.scale.set(0.5, 0.5, 0.5); // big enough to see clearly
+            dandelionGroup.add(flower);
+            flowers.push(flower);
+          }
+
+          const trailGeometry = new THREE.BufferGeometry();
+          const trailPositions = new Float32Array(flowerCount * 3);
+          trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+
+          const trailMaterial = new THREE.PointsMaterial({ 
+            color: 0xffff99, 
+            size: 0.05, 
+            transparent: true, 
+            opacity: 0.6 
+          });
+
+          const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
+          dandelionGroup.add(trailPoints);
+
+          anchor.onTargetFound = () => {
+            console.log("✅ Marker found");
+            dandelionGroup.visible = true;
+
+            // Place dandelions 1m in front of the camera
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            const targetPos = camera.position.clone().add(direction.multiplyScalar(1));
+            dandelionGroup.position.copy(targetPos);
+          };
+
+          let time = 0;
+          renderer.setAnimationLoop(() => {
+            time += 0.02;
+
+            flowers.forEach((flower, i) => {
+              const scale = Math.abs(Math.sin(time + i)) * 0.5 + 0.1;
+              flower.scale.set(scale, scale, scale);
+              flower.material.rotation += 0.01;
+              flower.position.y += Math.sin(time + i) * 0.005;
+
+              trailPositions[i * 3 + 0] = flower.position.x;
+              trailPositions[i * 3 + 1] = flower.position.y;
+              trailPositions[i * 3 + 2] = flower.position.z;
+            });
+
+            trailGeometry.attributes.position.needsUpdate = true;
+            renderer.render(scene, camera);
+          });
+        },
+        undefined,
+        (err) => {
+          console.error("❌ Failed to load dandelion.png", err);
+        }
+      );
+
+      await mindarThree.start();
+    });
+  </script>
+</body>
 </html>
