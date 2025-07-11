@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Floating Dandelions with Interaction</title>
+  <title>Floating Dandelions (Detached + Tap)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -13,7 +13,6 @@
   {
     "imports": {
       "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
       "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
     }
   }
@@ -36,8 +35,8 @@
       scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
       const dandelionGroup = new THREE.Group();
-      scene.add(dandelionGroup);
       dandelionGroup.visible = false;
+      scene.add(dandelionGroup);
 
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
@@ -85,7 +84,6 @@
         const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
         dandelionGroup.add(trailPoints);
 
-        // Handle tap events
         window.addEventListener("click", (event) => {
           const bounds = renderer.domElement.getBoundingClientRect();
           pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
@@ -95,11 +93,11 @@
           const intersects = raycaster.intersectObjects(flowers);
           if (intersects.length > 0) {
             const flower = intersects[0].object;
-            flower.userData.velocity.y += 0.01; // bounce upward
+            flower.userData.velocity.y += 0.01;
           }
         });
 
-        // Animate
+        // Animation
         renderer.setAnimationLoop(() => {
           flowers.forEach((flower, i) => {
             flower.material.rotation += 0.01;
@@ -107,25 +105,24 @@
             trailPositions[i * 3 + 0] = flower.position.x;
             trailPositions[i * 3 + 1] = flower.position.y;
             trailPositions[i * 3 + 2] = flower.position.z;
-
-            // slow down motion slightly
             flower.userData.velocity.multiplyScalar(0.98);
           });
-
           trailGeometry.attributes.position.needsUpdate = true;
           renderer.render(scene, camera);
         });
 
-        // Trigger: position group in world space on first detection
+        // Delayed world placement
         let placed = false;
         anchor.onTargetFound = () => {
           if (!placed) {
-            const worldPos = new THREE.Vector3();
-            anchor.group.getWorldPosition(worldPos);
-            dandelionGroup.position.copy(worldPos);
-            dandelionGroup.visible = true;
-            placed = true;
-            console.log("🌼 Dandelions deployed into world space");
+            setTimeout(() => {
+              const worldPos = new THREE.Vector3();
+              anchor.group.getWorldPosition(worldPos);
+              dandelionGroup.position.copy(worldPos);
+              dandelionGroup.visible = true;
+              placed = true;
+              console.log("✅ Flowers placed at:", worldPos);
+            }, 100); // wait 100ms for anchor to stabilize
           }
         };
       });
