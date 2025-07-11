@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dandelion Debug Test</title>
+  <title>Working Dandelions AR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     html, body {
@@ -12,38 +12,51 @@
       height: 100%;
       overflow: hidden;
     }
-    #container {
+    #ar-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
       height: 100%;
-      position: absolute;
+      z-index: 0;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
 </head>
 <body>
-  <div id="container"></div>
+  <div id="ar-container"></div>
   <script>
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
-    camera.position.z = 1;
+    document.addEventListener("DOMContentLoaded", async () => {
+      const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+        container: document.querySelector("#ar-container"),
+        imageTargetSrc: "./assets/target.mind"
+      });
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById("container").appendChild(renderer.domElement);
+      const { renderer, scene, camera } = mindarThree;
+      const anchor = mindarThree.addAnchor(0);
 
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-    scene.add(light);
+      // Red square
+      const red = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
+      red.position.set(0, 0, -0.5);
+      red.scale.set(0.2, 0.2, 0.2);
+      scene.add(red);
 
-    // Red square (test sprite)
-    const red = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
-    red.position.set(0, 0, -0.5);
-    red.scale.set(0.2, 0.2, 0.2);
-    scene.add(red);
+      // Dandelion group (invisible until marker found)
+      const dandelionGroup = new THREE.Group();
+      dandelionGroup.visible = false;
+      dandelionGroup.position.set(0.2, 0.2, -0.5);
+      camera.add(dandelionGroup); // attach to camera for consistent visibility
 
-    // Load dandelion sprite
-    const loader = new THREE.TextureLoader();
-    loader.load("./assets/dandelion.png",
-      (texture) => {
+      // Lighting
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+      scene.add(light);
+
+      // Load flower texture
+      const loader = new THREE.TextureLoader();
+      loader.load("./assets/dandelion.png", (texture) => {
         const spriteMat = new THREE.SpriteMaterial({
           map: texture,
           transparent: true,
@@ -52,19 +65,26 @@
         });
 
         const flower = new THREE.Sprite(spriteMat);
-        flower.position.set(0.2, 0.2, -0.5);
         flower.scale.set(0.4, 0.4, 0.4);
-        scene.add(flower);
-        console.log("✅ Dandelion sprite added");
-      },
-      undefined,
-      (err) => {
-        console.error("❌ Failed to load dandelion.png", err);
-      }
-    );
+        dandelionGroup.add(flower);
+        console.log("✅ Dandelion added");
+      });
 
-    renderer.setAnimationLoop(() => {
-      renderer.render(scene, camera);
+      anchor.onTargetFound = () => {
+        console.log("✅ Marker found");
+        dandelionGroup.visible = true;
+      };
+
+      anchor.onTargetLost = () => {
+        console.log("📭 Marker lost — dandelion stays visible");
+      };
+
+      renderer.setAnimationLoop(() => {
+        renderer.render(scene, camera);
+      });
+
+      await mindarThree.start();
+      console.log("✅ MindAR started");
     });
   </script>
 </body>
