@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>MindAR Floating Dandelions</title>
+  <title>Safe Anchored Dandelions</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -35,10 +35,8 @@
       scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
       scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-      // Group to hold floating flowers (placed into world)
       const dandelionGroup = new THREE.Group();
-      dandelionGroup.visible = false;
-      scene.add(dandelionGroup);
+      anchor.group.add(dandelionGroup); // Attach directly to anchor
 
       const loader = new THREE.TextureLoader();
       loader.load("./assets/dandelion.png", (texture) => {
@@ -49,21 +47,21 @@
           depthWrite: false
         });
 
-        const flowerCount = 12;
+        const flowerCount = 10;
         const flowers = [];
 
         for (let i = 0; i < flowerCount; i++) {
           const sprite = new THREE.Sprite(material.clone());
           sprite.position.set(
-            (Math.random() - 0.5) * 3,
-            (Math.random() - 0.5) * 3,
-            (Math.random() - 0.5) * 3
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5
           );
           sprite.scale.setScalar(0.3 + Math.random() * 0.3);
           sprite.userData.velocity = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.001,
-            (Math.random() - 0.5) * 0.001,
-            (Math.random() - 0.5) * 0.001
+            (Math.random() - 0.5) * 0.002,
+            (Math.random() - 0.5) * 0.002,
+            (Math.random() - 0.5) * 0.002
           );
           dandelionGroup.add(sprite);
           flowers.push(sprite);
@@ -84,11 +82,8 @@
         dandelionGroup.add(trailPoints);
 
         let time = 0;
-        let lastTouchX = 0;
-
         renderer.setAnimationLoop(() => {
           time += 0.01;
-
           flowers.forEach((flower, i) => {
             flower.material.rotation += 0.01;
             flower.position.add(flower.userData.velocity);
@@ -101,29 +96,7 @@
           renderer.render(scene, camera);
         });
 
-        // Touch interaction: swipe left/right to rotate entire group
-        window.addEventListener('touchstart', (e) => {
-          lastTouchX = e.touches[0].clientX;
-        });
-
-        window.addEventListener('touchmove', (e) => {
-          const deltaX = e.touches[0].clientX - lastTouchX;
-          dandelionGroup.rotation.y += deltaX * 0.005;
-          lastTouchX = e.touches[0].clientX;
-        });
-
-        // Place flowers into world when marker found (only once)
-        let placed = false;
-        anchor.onTargetFound = () => {
-          if (!placed) {
-            const worldPos = new THREE.Vector3();
-            anchor.group.getWorldPosition(worldPos);
-            dandelionGroup.position.copy(worldPos);
-            dandelionGroup.visible = true;
-            placed = true;
-            console.log("✅ Dandelions deployed into world space");
-          }
-        };
+        console.log("✅ Flowers loaded + animation running");
       });
 
       await mindarThree.start();
