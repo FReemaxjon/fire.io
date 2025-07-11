@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dandelion PNG WebAR</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      #ar-container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+    </style>
+    <!-- Include MindAR and Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+  </head>
+  <body>
+    <div id="ar-container"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+          container: document.querySelector("#ar-container"),
+          imageTargetSrc: "./assets/target.mind"
+        });
+
+        const { renderer, scene, camera } = mindarThree;
+        const anchor = mindarThree.addAnchor(0);
+
+        const flowerGroup = new THREE.Group();
+        anchor.group.add(flowerGroup);
+
+        // Lighting
+        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+        scene.add(light);
+
+        // Load flower PNG as a sprite
+        const textureLoader = new THREE.TextureLoader();
+        const flowerTexture = textureLoader.load("./assets/dandelion.png");
+
+        const flowerMaterial = new THREE.SpriteMaterial({ map: flowerTexture });
+        const flowerCount = 6;
+        const flowers = [];
+
+        for (let i = 0; i < flowerCount; i++) {
+          const flower = new THREE.Sprite(flowerMaterial.clone());
+          flower.position.set(
+            (Math.random() - 0.5) * 1.2,
+            (Math.random() - 0.5) * 1.2,
+            (Math.random() - 0.5) * 1.2
+          );
+          flower.scale.set(0, 0, 0); // Start hidden
+          flowerGroup.add(flower);
+          flowers.push(flower);
+        }
+
+        let time = 0;
+        renderer.setAnimationLoop(() => {
+          time += 0.02;
+          flowers.forEach((flower, i) => {
+            const scale = Math.abs(Math.sin(time + i)) * 1;
+            flower.scale.set(scale * 0.5, scale * 0.5, scale * 0.5);
+            flower.material.rotation += 0.01; // Spin the sprite
+          });
+
+          renderer.render(scene, camera);
+        });
+
+        await mindarThree.start();
+      });
+    </script>
+  </body>
+</html>
