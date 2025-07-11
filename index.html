@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Debugged Free-Floating Dandelions WebAR</title>
+  <title>Always Visible Dandelions WebAR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     html, body {
@@ -38,14 +39,16 @@
       const { renderer, scene, camera } = mindarThree;
       const anchor = mindarThree.addAnchor(0);
 
-      // Debug red square to confirm rendering
+      // Test red square to confirm rendering
       const testSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
       testSprite.position.set(0, 0, -1);
       testSprite.scale.set(0.2, 0.2, 0.2);
       scene.add(testSprite);
 
+      // Dandelions always visible in front of camera
       const dandelionGroup = new THREE.Group();
-      dandelionGroup.visible = false;
+      dandelionGroup.visible = true;
+      dandelionGroup.position.set(0, 0, -1); // 1 meter forward
       scene.add(dandelionGroup);
 
       const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
@@ -73,11 +76,11 @@
           for (let i = 0; i < flowerCount; i++) {
             const flower = new THREE.Sprite(flowerMaterial.clone());
             flower.position.set(
-              (Math.random() - 0.5) * 1,
-              (Math.random() - 0.5) * 1,
-              (Math.random() - 0.5) * 1
+              (Math.random() - 0.5) * 0.5,
+              (Math.random() - 0.5) * 0.5,
+              (Math.random() - 0.5) * 0.5
             );
-            flower.scale.set(0.5, 0.5, 0.5); // big enough to see clearly
+            flower.scale.set(0.3, 0.3, 0.3); // visible size
             dandelionGroup.add(flower);
             flowers.push(flower);
           }
@@ -95,17 +98,6 @@
 
           const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
           dandelionGroup.add(trailPoints);
-
-          anchor.onTargetFound = () => {
-            console.log("✅ Marker found");
-            dandelionGroup.visible = true;
-
-            // Place dandelions 1m in front of the camera
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            const targetPos = camera.position.clone().add(direction.multiplyScalar(1));
-            dandelionGroup.position.copy(targetPos);
-          };
 
           let time = 0;
           renderer.setAnimationLoop(() => {
@@ -132,7 +124,12 @@
         }
       );
 
-      await mindarThree.start();
+      try {
+        await mindarThree.start();
+        console.log("✅ MindAR started");
+      } catch (e) {
+        console.error("❌ MindAR failed to start:", e);
+      }
     });
   </script>
 </body>
