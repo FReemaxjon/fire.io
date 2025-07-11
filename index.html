@@ -36,6 +36,11 @@
           imageTargetSrc: "./assets/target.mind"
         });
 
+        const testSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
+testSprite.position.set(0, 0, -1); // 1m in front of camera
+testSprite.scale.set(0.2, 0.2, 0.2);
+scene.add(testSprite);
+
         const { renderer, scene, camera } = mindarThree;
         const anchor = mindarThree.addAnchor(0);
 
