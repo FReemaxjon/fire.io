@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dandelions Triggered by Marker</title>
+  <title>Dandelions Attached to Camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     html, body {
@@ -39,14 +38,17 @@
       const { renderer, scene, camera } = mindarThree;
       const anchor = mindarThree.addAnchor(0);
 
+      // Red square test sprite
       const testSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xff0000 }));
       testSprite.position.set(0, 0, -1);
       testSprite.scale.set(0.2, 0.2, 0.2);
       scene.add(testSprite);
 
+      // Group to hold dandelion sprites
       const dandelionGroup = new THREE.Group();
       dandelionGroup.visible = false;
-      scene.add(dandelionGroup);
+      dandelionGroup.position.set(0, 0, -1); // 1m in front of camera
+      camera.add(dandelionGroup); // attach directly to camera
 
       const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
       scene.add(light);
@@ -99,18 +101,10 @@
           anchor.onTargetFound = () => {
             console.log("✅ Marker found");
             dandelionGroup.visible = true;
-
-            const worldPos = new THREE.Vector3();
-            const worldDir = new THREE.Vector3();
-            camera.getWorldPosition(worldPos);
-            camera.getWorldDirection(worldDir);
-            worldDir.multiplyScalar(1.0);
-            worldPos.add(worldDir);
-            dandelionGroup.position.copy(worldPos);
           };
 
           anchor.onTargetLost = () => {
-            console.log("📭 Marker lost — but dandelions remain!");
+            console.log("📭 Marker lost — but dandelions stay");
           };
 
           let time = 0;
