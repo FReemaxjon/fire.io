@@ -3,28 +3,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Dandelion WebAR with Glow & Trails</title>
+    <title>Free-Floating Dandelions WebAR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  #ar-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-  }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #ar-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+      }
     </style>
-    <!-- Libraries -->
+    <!-- MindAR and Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
   </head>
@@ -40,8 +40,10 @@
         const { renderer, scene, camera } = mindarThree;
         const anchor = mindarThree.addAnchor(0);
 
-        const flowerGroup = new THREE.Group();
-        anchor.group.add(flowerGroup);
+        // Free-floating group, not attached to anchor
+        const dandelionGroup = new THREE.Group();
+        dandelionGroup.visible = false; // hidden until triggered
+        scene.add(dandelionGroup);
 
         // Lighting
         const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
@@ -65,17 +67,16 @@
         for (let i = 0; i < flowerCount; i++) {
           const flower = new THREE.Sprite(flowerMaterial.clone());
           flower.position.set(
-            (Math.random() - 0.5) * 1.2,
-            (Math.random() - 0.5) * 1.2,
-            (Math.random() - 0.5) * 1.2
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5
           );
-          flower.scale.set(0, 0, 0); // Start hidden
-          flowerGroup.add(flower);
+          flower.scale.set(0.001, 0.001, 0.001); // start tiny
+          dandelionGroup.add(flower);
           flowers.push(flower);
-
         }
 
-        // Store flower positions for trails
+        // Trail setup
         const trailGeometry = new THREE.BufferGeometry();
         const trailPositions = new Float32Array(flowerCount * 3);
         trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
@@ -88,8 +89,23 @@
         });
 
         const trailPoints = new THREE.Points(trailGeometry, trailMaterial);
-        flowerGroup.add(trailPoints);
+        dandelionGroup.add(trailPoints);
 
+        // Trigger the floating flowers when image is found
+        anchor.onTargetFound = () => {
+          dandelionGroup.visible = true;
+
+          // Optional: set the position to where marker was detected
+          const anchorPos = new THREE.Vector3();
+          anchor.group.getWorldPosition(anchorPos);
+          dandelionGroup.position.copy(anchorPos);
+        };
+
+        anchor.onTargetLost = () => {
+          // Keep it floating; do not hide
+        };
+
+        // Animate flowers
         let time = 0;
         renderer.setAnimationLoop(() => {
           time += 0.02;
@@ -100,7 +116,6 @@
             flower.material.rotation += 0.01;
             flower.position.y += Math.sin(time + i) * 0.005;
 
-            // update trail position
             trailPositions[i * 3 + 0] = flower.position.x;
             trailPositions[i * 3 + 1] = flower.position.y;
             trailPositions[i * 3 + 2] = flower.position.z;
